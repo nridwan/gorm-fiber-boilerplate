@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"context"
+	appmodule "gofiber-boilerplate/modules/app"
+	"gofiber-boilerplate/modules/config"
 	"log"
 
 	"github.com/gofiber/fiber/v2"
@@ -22,6 +24,8 @@ func CommandFx() *cli.Command {
 
 func runFx() {
 	app := fx.New(
+		config.FxModule,
+		appmodule.FxModule,
 		fx.Invoke(RegisterWebServer),
 	)
 
@@ -30,17 +34,19 @@ func runFx() {
 
 func RegisterWebServer(
 	lifeCycle fx.Lifecycle,
+	app *fiber.App,
+	configService *config.ConfigService,
 ) {
-	app := fiber.New()
-
 	lifeCycle.Append(fx.Hook{
 		OnStart: func(_ context.Context) error {
 			go func() {
 				app.Get("/", func(c *fiber.Ctx) error {
-					return c.SendString("Hello, World!")
+					return fiber.NewError(400, "Error")
 				})
 
-				if err := app.Listen(":3000"); err != nil {
+				if err := app.Listen(
+					configService.Getenv("APP_HOST", "") + ":" + configService.Getenv("PORT", "3000"),
+				); err != nil {
 					log.Fatalf("start server error : %v\n", err)
 				}
 

@@ -1,6 +1,9 @@
 package cmd
 
 import (
+	"gofiber-boilerplate/base"
+	appmodule "gofiber-boilerplate/modules/app"
+	"gofiber-boilerplate/modules/config"
 	"log"
 	"os"
 	"os/signal"
@@ -22,10 +25,20 @@ func CommandManual() *cli.Command {
 }
 
 func runManual() {
-	app := fiber.New()
+	configModule := config.SetupModule()
+	appModule := appmodule.SetupModule(configModule)
 
-	app.Get("/", func(c *fiber.Ctx) error {
-		return c.SendString("Hello, World!")
+	modules := []base.BaseModule{
+		configModule,
+		appModule,
+	}
+
+	for i := range modules {
+		modules[i].OnStart()
+	}
+
+	appModule.App.Get("/", func(c *fiber.Ctx) error {
+		return fiber.NewError(400, "Error")
 	})
 
 	c := make(chan os.Signal, 1)
@@ -33,14 +46,19 @@ func runManual() {
 	go func() error {
 		<-c
 		log.Println("stopping server ...")
-		err := app.Shutdown()
+		go func() {
+			appModule.App.Shutdown()
+		}()
+		for i := range modules {
+			modules[i].OnStop()
+		}
 		log.Println("stop server success")
-		return err
+		return nil
 	}()
 
 	// ...
 
-	if err := app.Listen(":3000"); err != nil {
+	if err := appModule.App.Listen(configModule.Service.Getenv("APP_HOST", "") + ":" + configModule.Service.Getenv("PORT", "3000")); err != nil {
 		log.Panic(err)
 	}
 }
