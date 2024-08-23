@@ -6,6 +6,8 @@ type ConfigService interface {
 	Getenv(key string, fallback string) string
 }
 
+// impl `ConfigService` start
+
 func (*ConfigModule) Getenv(key string, fallback string) string {
 	value := os.Getenv(key)
 	if len(value) == 0 {
@@ -13,3 +15,5 @@ func (*ConfigModule) Getenv(key string, fallback string) string {
 	}
 	return value
 }
+
+// impl `ConfigService` end

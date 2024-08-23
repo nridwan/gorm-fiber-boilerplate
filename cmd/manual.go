@@ -5,6 +5,7 @@ import (
 	"gofiber-boilerplate/modules/app"
 	"gofiber-boilerplate/modules/config"
 	"gofiber-boilerplate/modules/db"
+	"gofiber-boilerplate/modules/user"
 	"log"
 	"os"
 	"os/signal"
@@ -29,11 +30,13 @@ func runManual() {
 	configModule := config.SetupModule()
 	appModule := app.SetupModule(configModule)
 	dbModule := db.SetupModule(configModule)
+	userModule := user.SetupModule(appModule, dbModule)
 
 	modules := []base.BaseModule{
 		configModule,
 		appModule,
 		dbModule,
+		userModule,
 	}
 
 	for i := range modules {

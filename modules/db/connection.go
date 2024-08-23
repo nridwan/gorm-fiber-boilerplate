@@ -93,6 +93,10 @@ func (module *DbModule) AddConfig(profName string, config *DbProfile) {
 		log.Fatalf("DB profile `%s` ping error: %v", profName, err)
 	}
 
+	if config.Connection == "postgres" {
+		module.db[profName].Exec(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`)
+	}
+
 }
 
 // RemoveConfig = remove configuration

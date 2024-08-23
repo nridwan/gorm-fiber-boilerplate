@@ -5,6 +5,7 @@ import (
 	"gofiber-boilerplate/modules/app"
 	"gofiber-boilerplate/modules/config"
 	"gofiber-boilerplate/modules/db"
+	"gofiber-boilerplate/modules/user"
 	"log"
 
 	"github.com/gofiber/fiber/v2"
@@ -28,6 +29,7 @@ func runFx() {
 		config.FxModule,
 		app.FxModule,
 		db.FxModule,
+		user.FxModule,
 		fx.Invoke(registerWebServer),
 	)
 

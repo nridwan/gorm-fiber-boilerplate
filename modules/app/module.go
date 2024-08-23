@@ -4,6 +4,7 @@ import (
 	"gofiber-boilerplate/base"
 	"gofiber-boilerplate/modules/config"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"go.uber.org/fx"
 )
@@ -11,6 +12,7 @@ import (
 type AppModule struct {
 	App             *fiber.App
 	ResponseService ResponseService
+	Validator       *validator.Validate
 }
 
 func NewFiber(responseService ResponseService) *fiber.App {
@@ -19,10 +21,15 @@ func NewFiber(responseService ResponseService) *fiber.App {
 	})
 }
 
-func NewModule(app *fiber.App, responseService ResponseService) *AppModule {
+func ProvideValidator() *validator.Validate {
+	return validator.New()
+}
+
+func NewModule(app *fiber.App, responseService ResponseService, validator *validator.Validate) *AppModule {
 	return &AppModule{
 		App:             app,
 		ResponseService: responseService,
+		Validator:       validator,
 	}
 }
 
@@ -32,10 +39,10 @@ func fxRegister(lifeCycle fx.Lifecycle, module *AppModule) {
 
 func SetupModule(config config.ConfigService) *AppModule {
 	responseService := NewResponseService(config)
-	return NewModule(NewFiber(responseService), responseService)
+	return NewModule(NewFiber(responseService), responseService, ProvideValidator())
 }
 
-var FxModule = fx.Module("app", fx.Provide(NewFiber), fx.Provide(NewResponseService), fx.Provide(NewModule), fx.Invoke(fxRegister))
+var FxModule = fx.Module("app", fx.Provide(NewFiber), fx.Provide(NewResponseService), fx.Provide(ProvideValidator), fx.Provide(NewModule), fx.Invoke(fxRegister))
 
 // implements `BaseModule` of `base/module.go` start
 
