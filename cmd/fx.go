@@ -28,13 +28,13 @@ func runFx() {
 		config.FxModule,
 		app.FxModule,
 		db.FxModule,
-		fx.Invoke(RegisterWebServer),
+		fx.Invoke(registerWebServer),
 	)
 
 	fxApp.Run()
 }
 
-func RegisterWebServer(
+func registerWebServer(
 	lifeCycle fx.Lifecycle,
 	app *fiber.App,
 	config config.ConfigService,
