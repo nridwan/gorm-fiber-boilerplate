@@ -2,8 +2,9 @@ package cmd
 
 import (
 	"gofiber-boilerplate/base"
-	appmodule "gofiber-boilerplate/modules/app"
+	"gofiber-boilerplate/modules/app"
 	"gofiber-boilerplate/modules/config"
+	"gofiber-boilerplate/modules/db"
 	"log"
 	"os"
 	"os/signal"
@@ -26,11 +27,13 @@ func CommandManual() *cli.Command {
 
 func runManual() {
 	configModule := config.SetupModule()
-	appModule := appmodule.SetupModule(configModule)
+	appModule := app.SetupModule(configModule)
+	dbModule := db.SetupModule(configModule)
 
 	modules := []base.BaseModule{
 		configModule,
 		appModule,
+		dbModule,
 	}
 
 	for i := range modules {
@@ -58,7 +61,7 @@ func runManual() {
 
 	// ...
 
-	if err := appModule.App.Listen(configModule.Service.Getenv("APP_HOST", "") + ":" + configModule.Service.Getenv("PORT", "3000")); err != nil {
+	if err := appModule.App.Listen(configModule.Getenv("APP_HOST", "") + ":" + configModule.Getenv("PORT", "3000")); err != nil {
 		log.Panic(err)
 	}
 }

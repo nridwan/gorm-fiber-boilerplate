@@ -7,17 +7,23 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-type ResponseService struct {
+type ResponseService interface {
+	CreateErrorResponse(code int, message string, errors []appmodel.Error) *appmodel.Response
+	CreateResponse(code int, message string, data interface{}) *appmodel.Response
+	ErrorHandler(ctx *fiber.Ctx, err error) error
+}
+
+type responseServiceImpl struct {
 	appName string
 }
 
-func NewResponseService(config *config.ConfigService) *ResponseService {
-	return &ResponseService{
+func NewResponseService(config config.ConfigService) ResponseService {
+	return &responseServiceImpl{
 		appName: config.Getenv("APP_CODE", "APP"),
 	}
 }
 
-func (service *ResponseService) CreateErrorResponse(code int, message string, errors []appmodel.Error) *appmodel.Response {
+func (service *responseServiceImpl) CreateErrorResponse(code int, message string, errors []appmodel.Error) *appmodel.Response {
 	return &appmodel.Response{
 		ResponseSchema: &appmodel.ResponseSchema{
 			ResponseCode:    &code,
@@ -29,7 +35,7 @@ func (service *ResponseService) CreateErrorResponse(code int, message string, er
 	}
 }
 
-func (service *ResponseService) CreateResponse(code int, message string, data interface{}) *appmodel.Response {
+func (service *responseServiceImpl) CreateResponse(code int, message string, data interface{}) *appmodel.Response {
 	return &appmodel.Response{
 		ResponseSchema: &appmodel.ResponseSchema{
 			ResponseCode:    &code,
@@ -40,7 +46,7 @@ func (service *ResponseService) CreateResponse(code int, message string, data in
 }
 
 // ErrorHandler check if connection should be continued or not
-func (service *ResponseService) ErrorHandler(ctx *fiber.Ctx, err error) error {
+func (service *responseServiceImpl) ErrorHandler(ctx *fiber.Ctx, err error) error {
 	// Status code defaults to 500
 	code := fiber.StatusInternalServerError
 

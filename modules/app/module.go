@@ -10,16 +10,16 @@ import (
 
 type AppModule struct {
 	App             *fiber.App
-	ResponseService *ResponseService
+	ResponseService ResponseService
 }
 
-func NewFiber(responseService *ResponseService) *fiber.App {
+func NewFiber(responseService ResponseService) *fiber.App {
 	return fiber.New(fiber.Config{
 		ErrorHandler: responseService.ErrorHandler,
 	})
 }
 
-func NewModule(app *fiber.App, responseService *ResponseService) *AppModule {
+func NewModule(app *fiber.App, responseService ResponseService) *AppModule {
 	return &AppModule{
 		App:             app,
 		ResponseService: responseService,
@@ -30,8 +30,8 @@ func fxRegister(lifeCycle fx.Lifecycle, module *AppModule) {
 	base.FxRegister(module, lifeCycle)
 }
 
-func SetupModule(config *config.ConfigModule) *AppModule {
-	responseService := NewResponseService(config.Service)
+func SetupModule(config config.ConfigService) *AppModule {
+	responseService := NewResponseService(config)
 	return NewModule(NewFiber(responseService), responseService)
 }
 

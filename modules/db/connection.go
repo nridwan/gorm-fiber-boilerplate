@@ -1,0 +1,113 @@
+package db
+
+import (
+	"database/sql"
+	"fmt"
+	"log"
+	"net/url"
+
+	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+)
+
+const (
+	DEFAULT_DB_KEY = "default"
+)
+
+type DbService interface {
+	AddConfig(profName string, config *DbProfile)
+	RemoveConfig(profName string)
+	Default() *gorm.DB
+	Get(profName string) *gorm.DB
+}
+
+// DbProfile = db configuration
+type DbProfile struct {
+	Connection string
+	Host       string
+	Port       string
+	Database   string
+	Username   string
+	Password   string
+	Locale     string
+	DbUrl      string
+}
+
+func (module *DbModule) addDefaultConfig() {
+	module.AddConfig(DEFAULT_DB_KEY, &DbProfile{
+		Connection: module.config.Getenv("DB_CONNECTION", ""),
+		Host:       module.config.Getenv("DB_HOST", ""),
+		Port:       module.config.Getenv("DB_PORT", ""),
+		Database:   module.config.Getenv("DB_DATABASE", ""),
+		Username:   module.config.Getenv("DB_USERNAME", ""),
+		Password:   module.config.Getenv("DB_PASSWORD", ""),
+		Locale:     module.config.Getenv("DB_LOCALE", ""),
+		DbUrl:      module.config.Getenv("DATABASE_URL", ""),
+	})
+}
+
+// impl `DbService` start
+
+// AddConfig = add configuration
+func (module *DbModule) AddConfig(profName string, config *DbProfile) {
+	var err error
+	if config.Connection == "mysql" {
+		suffix := "?loc="
+		if config.Locale == "" {
+			suffix += "UTC"
+		} else {
+			suffix += url.QueryEscape(config.Locale)
+		}
+		suffix += "&parseTime=true&multiStatements=true"
+		log.Println(config.Username + ":" + config.Password + "@tcp(" + config.Host + ":" + config.Port + ")/" + config.Database + suffix)
+		module.db[profName], err = gorm.Open(
+			mysql.Open(config.Username + ":" + config.Password + "@tcp(" + config.Host + ":" + config.Port + ")/" + config.Database + suffix),
+		)
+	} else if config.Connection == "postgres" {
+		var connInfo string
+		if config.DbUrl != "" {
+			connInfo = config.DbUrl
+		} else {
+			connInfo = fmt.Sprintf("host='%s' port=%s user='%s' "+
+				"password='%s' dbname='%s' sslmode=disable",
+				config.Host, config.Port, config.Username, config.Password, config.Database)
+		}
+		module.db[profName], err = gorm.Open(
+			postgres.Open(connInfo),
+		)
+	}
+
+	var sqlDB *sql.DB
+	if err == nil {
+		sqlDB, err = module.db[profName].DB()
+	}
+
+	if err != nil {
+		log.Fatalf("DB profile `%s` connect error: %v", profName, err)
+	}
+
+	err = sqlDB.Ping()
+
+	if err != nil {
+		log.Fatalf("DB profile `%s` ping error: %v", profName, err)
+	}
+
+}
+
+// RemoveConfig = remove configuration
+func (module *DbModule) RemoveConfig(profName string) {
+	delete(module.db, profName)
+}
+
+// Default : get default DB profile
+func (module *DbModule) Default() *gorm.DB {
+	return module.db[DEFAULT_DB_KEY]
+}
+
+// Get : get DB profile
+func (module *DbModule) Get(profName string) *gorm.DB {
+	return module.db[profName]
+}
+
+// impl `DbService` end

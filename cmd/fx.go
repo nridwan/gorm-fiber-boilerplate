@@ -2,8 +2,9 @@ package cmd
 
 import (
 	"context"
-	appmodule "gofiber-boilerplate/modules/app"
+	"gofiber-boilerplate/modules/app"
 	"gofiber-boilerplate/modules/config"
+	"gofiber-boilerplate/modules/db"
 	"log"
 
 	"github.com/gofiber/fiber/v2"
@@ -23,19 +24,20 @@ func CommandFx() *cli.Command {
 }
 
 func runFx() {
-	app := fx.New(
+	fxApp := fx.New(
 		config.FxModule,
-		appmodule.FxModule,
+		app.FxModule,
+		db.FxModule,
 		fx.Invoke(RegisterWebServer),
 	)
 
-	app.Run()
+	fxApp.Run()
 }
 
 func RegisterWebServer(
 	lifeCycle fx.Lifecycle,
 	app *fiber.App,
-	configService *config.ConfigService,
+	config config.ConfigService,
 ) {
 	lifeCycle.Append(fx.Hook{
 		OnStart: func(_ context.Context) error {
@@ -45,7 +47,7 @@ func RegisterWebServer(
 				})
 
 				if err := app.Listen(
-					configService.Getenv("APP_HOST", "") + ":" + configService.Getenv("PORT", "3000"),
+					config.Getenv("APP_HOST", "") + ":" + config.Getenv("PORT", "3000"),
 				); err != nil {
 					log.Fatalf("start server error : %v\n", err)
 				}

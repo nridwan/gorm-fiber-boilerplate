@@ -9,13 +9,14 @@ import (
 )
 
 type ConfigModule struct {
-	Service *ConfigService
 }
 
-func NewModule(service *ConfigService) *ConfigModule {
-	return &ConfigModule{
-		Service: service,
-	}
+func NewModule() *ConfigModule {
+	return &ConfigModule{}
+}
+
+func ProvideService(module *ConfigModule) ConfigService {
+	return module
 }
 
 func fxRegister(lifeCycle fx.Lifecycle, module *ConfigModule) {
@@ -23,10 +24,10 @@ func fxRegister(lifeCycle fx.Lifecycle, module *ConfigModule) {
 }
 
 func SetupModule() *ConfigModule {
-	return NewModule(&ConfigService{})
+	return NewModule()
 }
 
-var FxModule = fx.Module("Config", fx.Provide(NewService), fx.Provide(NewModule), fx.Invoke(fxRegister))
+var FxModule = fx.Module("Config", fx.Provide(NewModule), fx.Provide(ProvideService), fx.Invoke(fxRegister))
 
 // implements `BaseModule` of `base/module.go` start
 
