@@ -5,7 +5,7 @@ const (
 	detailPath = basePath + "/:id"
 )
 
-func (module *UserModule) registerHandlers() {
+func (module *UserModule) registerRoutes() {
 	module.app.Post(basePath, module.controller.handleCreate)
 	module.app.Get(basePath, module.controller.handleList)
 	module.app.Get(detailPath, module.controller.handleDetail)

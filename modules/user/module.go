@@ -37,7 +37,7 @@ var FxModule = fx.Module("User", fx.Provide(NewUserService), fx.Provide(newUserC
 func (module *UserModule) OnStart() error {
 	module.db.Default().AutoMigrate(&usermodel.UserModel{})
 	module.Service.Init(module.db)
-	module.registerHandlers()
+	module.registerRoutes()
 	return nil
 }
 
