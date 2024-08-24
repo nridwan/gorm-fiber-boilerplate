@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"gofiber-boilerplate/modules/app/appmodel"
 	"gofiber-boilerplate/modules/config"
 
@@ -9,6 +10,7 @@ import (
 )
 
 type ResponseService interface {
+	Init(config config.ConfigService)
 	CreateErrorResponse(code int, message string, errors []appmodel.Error) *appmodel.Response
 	CreateResponse(code int, message string, data interface{}) *appmodel.Response
 	SendErrorResponse(ctx *fiber.Ctx, code int, message string, errors []appmodel.Error) error
@@ -22,18 +24,25 @@ type responseServiceImpl struct {
 	appName string
 }
 
-func NewResponseService(config config.ConfigService) ResponseService {
-	return &responseServiceImpl{
-		appName: config.Getenv("APP_CODE", "APP"),
-	}
+func NewResponseService() ResponseService {
+	return &responseServiceImpl{}
+}
+
+func (service *responseServiceImpl) generateResponseCode(code int) *string {
+	responseCode := fmt.Sprintf("%s-%d", service.appName, code)
+	return &responseCode
 }
 
 // impl `ResponseService` start
 
+func (service *responseServiceImpl) Init(config config.ConfigService) {
+	service.appName = config.Getenv("APP_CODE", "APP")
+}
+
 func (service *responseServiceImpl) CreateErrorResponse(code int, message string, errors []appmodel.Error) *appmodel.Response {
 	return &appmodel.Response{
 		ResponseSchema: &appmodel.ResponseSchema{
-			ResponseCode:    &code,
+			ResponseCode:    service.generateResponseCode(code),
 			ResponseMessage: &message,
 		},
 		ResponseOutput: appmodel.ErrorResponse{
@@ -45,7 +54,7 @@ func (service *responseServiceImpl) CreateErrorResponse(code int, message string
 func (service *responseServiceImpl) CreateResponse(code int, message string, data interface{}) *appmodel.Response {
 	return &appmodel.Response{
 		ResponseSchema: &appmodel.ResponseSchema{
-			ResponseCode:    &code,
+			ResponseCode:    service.generateResponseCode(code),
 			ResponseMessage: &message,
 		},
 		ResponseOutput: data,

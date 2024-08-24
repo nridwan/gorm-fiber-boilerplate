@@ -14,7 +14,7 @@ type Error struct {
 
 // ResponseSchema : ResponseSchema response
 type ResponseSchema struct {
-	ResponseCode    *int    `json:"response_code"`
+	ResponseCode    *string `json:"response_code"`
 	ResponseMessage *string `json:"response_message"`
 }
 
