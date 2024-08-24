@@ -1,7 +1,6 @@
 package user
 
 import (
-	"fmt"
 	"gofiber-boilerplate/modules/app/appmodel"
 	"gofiber-boilerplate/modules/db"
 	"gofiber-boilerplate/modules/user/userdto"
@@ -43,9 +42,7 @@ func (service *userServiceImpl) Insert(user *usermodel.UserModel) (*userdto.User
 	}
 	pwdString := string(pwd)
 	user.Password = &pwdString
-	fmt.Printf("%v", user)
 	result := service.db.Create(user)
-	fmt.Printf("%v", user)
 	dto := userdto.MapUserModelToDTO(user)
 	return dto, result.Error
 }
