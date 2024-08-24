@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	DEFAULT_DB_KEY = "default"
+	DefaultDbKey = "default"
 )
 
 type DbService interface {
@@ -35,7 +35,7 @@ type DbProfile struct {
 }
 
 func (module *DbModule) addDefaultConfig() {
-	module.AddConfig(DEFAULT_DB_KEY, &DbProfile{
+	module.AddConfig(DefaultDbKey, &DbProfile{
 		Connection: module.config.Getenv("DB_CONNECTION", ""),
 		Host:       module.config.Getenv("DB_HOST", ""),
 		Port:       module.config.Getenv("DB_PORT", ""),
@@ -106,7 +106,7 @@ func (module *DbModule) RemoveConfig(profName string) {
 
 // Default : get default DB profile
 func (module *DbModule) Default() *gorm.DB {
-	return module.db[DEFAULT_DB_KEY]
+	return module.db[DefaultDbKey]
 }
 
 // Get : get DB profile
