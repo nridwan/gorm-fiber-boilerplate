@@ -130,17 +130,6 @@ func (service *userServiceImpl) List(req *appmodel.GetListRequest) (*appmodel.Pa
 		}
 	}
 
-	result := query.Limit(req.Limit).Offset((req.Page - 1) * req.Limit).Find(&users)
-	countResult := query.Count(&count)
-
-	if result.Error != nil {
-		return nil, result.Error
-	}
-
-	if countResult.Error != nil {
-		return nil, countResult.Error
-	}
-
 	count32 := int(count)
 
 	return &appmodel.PaginationResponseList{
@@ -150,7 +139,7 @@ func (service *userServiceImpl) List(req *appmodel.GetListRequest) (*appmodel.Pa
 			Total: &count32,
 		},
 		Content: users,
-	}, result.Error
+	}, nil
 }
 
 // impl `UserService` end
