@@ -84,8 +84,7 @@ Open `{{BASE_URL}}/monitor` in browser to see. You can disable this by removing 
 
 ## Opentelemetry
 
-auto integrated for gofiber endpoint and database performance.
-but sadly I can't find a way to make the database query become span inside fiber logging.
+auto integrated for gofiber endpoint and database performance. need to use `monitorService.StartTrace` to add more nexted context for monitoring clarity.
 
 ### How to collect and see the traces
 
