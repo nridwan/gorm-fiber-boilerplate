@@ -9,14 +9,18 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+const (
+	StatusSuccess = "SUCCESS"
+)
+
 type ResponseService interface {
 	Init(config config.ConfigService)
 	CreateErrorResponse(code int, message string, errors []appmodel.Error) *appmodel.Response
-	CreateResponse(code int, message string, data interface{}) *appmodel.Response
+	CreateResponse(code int, status string, result interface{}) *appmodel.Response
 	SendErrorResponse(ctx *fiber.Ctx, code int, message string, errors []appmodel.Error) error
 	SendValidationErrorResponse(ctx *fiber.Ctx, code int, message string, errors validator.ValidationErrors) error
-	SendResponse(ctx *fiber.Ctx, code int, message string, data interface{}) error
-	SendSuccessResponse(ctx *fiber.Ctx, message string, data interface{}) error
+	SendResponse(ctx *fiber.Ctx, code int, status string, result interface{}) error
+	SendSuccessResponse(ctx *fiber.Ctx, code int, result interface{}) error
 	ErrorHandler(ctx *fiber.Ctx, err error) error
 }
 
@@ -24,13 +28,13 @@ type responseServiceImpl struct {
 	appName string
 }
 
-func NewResponseService() ResponseService {
-	return &responseServiceImpl{}
-}
-
 func (service *responseServiceImpl) generateResponseCode(code int) *string {
 	responseCode := fmt.Sprintf("%s-%d", service.appName, code)
 	return &responseCode
+}
+
+func NewResponseService() ResponseService {
+	return &responseServiceImpl{}
 }
 
 // impl `ResponseService` start
@@ -77,12 +81,12 @@ func (service *responseServiceImpl) SendValidationErrorResponse(ctx *fiber.Ctx, 
 	return service.SendErrorResponse(ctx, code, message, mappedError)
 }
 
-func (service *responseServiceImpl) SendResponse(ctx *fiber.Ctx, code int, message string, data interface{}) error {
-	return ctx.Status(code).JSON(service.CreateResponse(code, message, data))
+func (service *responseServiceImpl) SendResponse(ctx *fiber.Ctx, code int, status string, result interface{}) error {
+	return ctx.Status(code).JSON(service.CreateResponse(code, status, result))
 }
 
-func (service *responseServiceImpl) SendSuccessResponse(ctx *fiber.Ctx, message string, data interface{}) error {
-	return service.SendResponse(ctx, 200, message, data)
+func (service *responseServiceImpl) SendSuccessResponse(ctx *fiber.Ctx, code int, result interface{}) error {
+	return service.SendResponse(ctx, 200, StatusSuccess, result)
 }
 
 // ErrorHandler check if connection should be continued or not
@@ -95,7 +99,7 @@ func (service *responseServiceImpl) ErrorHandler(ctx *fiber.Ctx, err error) erro
 		code = e.Code
 	}
 
-	return ctx.Status(code).JSON(service.CreateResponse(code, err.Error(), nil))
+	return ctx.Status(code).JSON(service.CreateErrorResponse(code, err.Error(), nil))
 }
 
 // impl `ResponseService` end

@@ -3,10 +3,13 @@ package user
 import (
 	"gofiber-boilerplate/modules/app"
 	"gofiber-boilerplate/modules/app/appmodel"
+	"gofiber-boilerplate/modules/jwt"
 	"gofiber-boilerplate/modules/user/userdto"
+	"gofiber-boilerplate/utils"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 )
 
 const (
@@ -30,7 +33,7 @@ func newUserController(service UserService, responseService app.ResponseService,
 // handlers start
 
 func (controller *userController) handleCreate(ctx *fiber.Ctx) error {
-	request := userdto.CreateUserDTO{}
+	request := userdto.RegisterDTO{}
 	ctx.BodyParser(&request)
 	err := controller.validator.Struct(request)
 
@@ -38,13 +41,62 @@ func (controller *userController) handleCreate(ctx *fiber.Ctx) error {
 		return controller.responseService.SendValidationErrorResponse(ctx, 400, validationError, err.(validator.ValidationErrors))
 	}
 
-	model, err := controller.service.Insert(request.ToModel())
+	model, err := controller.service.Insert(ctx.UserContext(), request.ToModel())
 
 	if err != nil {
 		return fiber.NewError(400, err.Error())
 	}
 
-	return controller.responseService.SendResponse(ctx, 201, "Success", model)
+	return controller.responseService.SendSuccessResponse(ctx, 201, model)
+}
+
+func (controller *userController) handleLogin(ctx *fiber.Ctx) error {
+	request := userdto.LoginDTO{}
+	ctx.BodyParser(&request)
+	err := controller.validator.Struct(request)
+
+	if err != nil {
+		return controller.responseService.SendValidationErrorResponse(ctx, 400, validationError, err.(validator.ValidationErrors))
+	}
+
+	response, err := controller.service.Login(ctx.UserContext(), &request)
+
+	if err != nil {
+		return fiber.NewError(400, err.Error())
+	}
+	return controller.responseService.SendSuccessResponse(ctx, 200, response)
+}
+
+func (controller *userController) handleProfile(ctx *fiber.Ctx) error {
+	var user *userdto.UserDTO
+	var err error
+
+	id, err := utils.GetFiberJwtUserId(ctx)
+
+	if err == nil {
+		user, err = controller.service.Detail(ctx.UserContext(), id)
+	}
+
+	if err != nil {
+		return fiber.NewError(400, err.Error())
+	}
+
+	user.CreatedAt = nil
+
+	return controller.responseService.SendSuccessResponse(ctx, 200, user)
+}
+
+func (controller *userController) handleRefresh(ctx *fiber.Ctx) error {
+	var user *jwt.JWTTokenModel
+	var err error
+
+	user, err = controller.service.RefreshToken(ctx.UserContext(), utils.GetFiberJwtClaims(ctx))
+
+	if err != nil {
+		return fiber.NewError(400, err.Error())
+	}
+
+	return controller.responseService.SendSuccessResponse(ctx, 200, user)
 }
 
 func (controller *userController) handleList(ctx *fiber.Ctx) error {
@@ -55,27 +107,30 @@ func (controller *userController) handleList(ctx *fiber.Ctx) error {
 		return controller.responseService.SendValidationErrorResponse(ctx, 400, validationError, err.(validator.ValidationErrors))
 	}
 
-	list, err := controller.service.List(request)
+	list, err := controller.service.List(ctx.UserContext(), request)
 
 	if err != nil {
 		return fiber.NewError(400, err.Error())
 	}
 
-	return controller.responseService.SendSuccessResponse(ctx, "Success", appmodel.PaginationResponse{
-		List: &appmodel.PaginationResponseList{
-			Pagination: &appmodel.PaginationResponsePagination{},
-			Content:    list,
-		},
+	return controller.responseService.SendSuccessResponse(ctx, 200, appmodel.PaginationResponse{
+		List: list,
 	})
 }
 
 func (controller *userController) handleDetail(ctx *fiber.Ctx) error {
-	user, err := controller.service.Detail(ctx.Params("id"))
+	userId, err := uuid.Parse(ctx.Params("id"))
 
 	if err != nil {
 		return fiber.NewError(400, err.Error())
 	}
-	return controller.responseService.SendSuccessResponse(ctx, "Success", user)
+
+	user, err := controller.service.Detail(ctx.UserContext(), userId)
+
+	if err != nil {
+		return fiber.NewError(400, err.Error())
+	}
+	return controller.responseService.SendSuccessResponse(ctx, 200, user)
 }
 
 func (controller *userController) handleUpdate(ctx *fiber.Ctx) error {
@@ -87,21 +142,33 @@ func (controller *userController) handleUpdate(ctx *fiber.Ctx) error {
 		return controller.responseService.SendValidationErrorResponse(ctx, 400, validationError, err.(validator.ValidationErrors))
 	}
 
-	user, err := controller.service.Update(ctx.Params("id"), &request)
+	userId, err := uuid.Parse(ctx.Params("id"))
 
 	if err != nil {
 		return fiber.NewError(400, err.Error())
 	}
-	return controller.responseService.SendSuccessResponse(ctx, "Success", user)
+
+	user, err := controller.service.Update(ctx.UserContext(), userId, &request)
+
+	if err != nil {
+		return fiber.NewError(400, err.Error())
+	}
+	return controller.responseService.SendSuccessResponse(ctx, 200, user)
 }
 
 func (controller *userController) handleDelete(ctx *fiber.Ctx) error {
-	err := controller.service.Delete(ctx.Params("id"))
+	userId, err := uuid.Parse(ctx.Params("id"))
 
 	if err != nil {
 		return fiber.NewError(400, err.Error())
 	}
-	return controller.responseService.SendSuccessResponse(ctx, "Success", nil)
+
+	err = controller.service.Delete(ctx.UserContext(), userId)
+
+	if err != nil {
+		return fiber.NewError(400, err.Error())
+	}
+	return controller.responseService.SendSuccessResponse(ctx, 200, nil)
 }
 
 // handlers end

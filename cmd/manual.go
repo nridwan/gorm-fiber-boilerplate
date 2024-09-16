@@ -5,6 +5,8 @@ import (
 	"gofiber-boilerplate/modules/app"
 	"gofiber-boilerplate/modules/config"
 	"gofiber-boilerplate/modules/db"
+	"gofiber-boilerplate/modules/jwt"
+	"gofiber-boilerplate/modules/monitor"
 	"gofiber-boilerplate/modules/user"
 	"log"
 	"os"
@@ -29,13 +31,17 @@ func CommandManual() *cli.Command {
 func runManual() {
 	configModule := config.SetupModule()
 	appModule := app.SetupModule(configModule)
+	monitorModule := monitor.SetupModule(appModule, configModule)
 	dbModule := db.SetupModule(configModule)
-	userModule := user.SetupModule(appModule, dbModule)
+	jwtModule := jwt.SetupModule(appModule, configModule)
+	userModule := user.SetupModule(appModule, dbModule, jwtModule, monitorModule)
 
 	modules := []base.BaseModule{
 		configModule,
 		appModule,
+		monitorModule,
 		dbModule,
+		jwtModule,
 		userModule,
 	}
 

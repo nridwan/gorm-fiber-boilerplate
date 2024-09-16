@@ -5,6 +5,8 @@ import (
 	"gofiber-boilerplate/modules/app"
 	"gofiber-boilerplate/modules/config"
 	"gofiber-boilerplate/modules/db"
+	"gofiber-boilerplate/modules/jwt"
+	"gofiber-boilerplate/modules/monitor"
 	"gofiber-boilerplate/modules/user"
 	"log"
 
@@ -28,7 +30,9 @@ func runFx() {
 	fxApp := fx.New(
 		config.FxModule,
 		app.FxModule,
+		monitor.FxModule,
 		db.FxModule,
+		jwt.FxModule,
 		user.FxModule,
 		fx.Invoke(registerWebServer),
 	)

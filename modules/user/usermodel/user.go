@@ -1,20 +1,13 @@
 package usermodel
 
-import (
-	"time"
-
-	"github.com/google/uuid"
-	"gorm.io/gorm"
-)
+import "gofiber-boilerplate/base"
 
 type UserModel struct {
-	ID        uuid.UUID      `json:"id" gorm:"type:uuid;not null;primaryKey;default:uuid_generate_v4()"`
-	Name      string         `json:"name" gorm:"not null;"`
-	Email     string         `json:"email" gorm:"not null;unique;"`
-	Password  *string        `json:"password" gorm:"not null;"`
-	CreatedAt time.Time      `json:"created_at" gorm:"not null;"`
-	UpdatedAt time.Time      `json:"updated_at" gorm:"not null;"`
-	DeletedAt gorm.DeletedAt `json:"deleted_at" gorm:"index"`
+	base.BaseModel
+	Name     string  `json:"name" gorm:"not null;"`
+	Email    string  `json:"email" gorm:"not null;unique;"`
+	Password *string `json:"-" gorm:"not null;"`
+	IsAdmin  bool    `json:"is_admin" gorm:"not null;default:false"`
 }
 
 func (UserModel) TableName() string {

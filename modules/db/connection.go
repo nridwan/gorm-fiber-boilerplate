@@ -9,6 +9,8 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+	"gorm.io/plugin/opentelemetry/tracing"
 )
 
 const (
@@ -20,6 +22,7 @@ type DbService interface {
 	RemoveConfig(profName string)
 	Default() *gorm.DB
 	Get(profName string) *gorm.DB
+	AutoMigrate() bool
 }
 
 // DbProfile = db configuration
@@ -32,9 +35,11 @@ type DbProfile struct {
 	Password   string
 	Locale     string
 	DbUrl      string
+	Logging    bool
 }
 
 func (module *DbModule) addDefaultConfig() {
+	module.autoMigrate = module.config.Getenv("DB_AUTOMIGRATION", "") == "true"
 	module.AddConfig(DefaultDbKey, &DbProfile{
 		Connection: module.config.Getenv("DB_CONNECTION", ""),
 		Host:       module.config.Getenv("DB_HOST", ""),
@@ -44,6 +49,7 @@ func (module *DbModule) addDefaultConfig() {
 		Password:   module.config.Getenv("DB_PASSWORD", ""),
 		Locale:     module.config.Getenv("DB_LOCALE", ""),
 		DbUrl:      module.config.Getenv("DATABASE_URL", ""),
+		Logging:    module.config.Getenv("DB_LOGGING", "") == "true",
 	})
 }
 
@@ -52,6 +58,12 @@ func (module *DbModule) addDefaultConfig() {
 // AddConfig = add configuration
 func (module *DbModule) AddConfig(profName string, config *DbProfile) {
 	var err error
+	gormConfig := gorm.Config{}
+
+	if !config.Logging {
+		gormConfig.Logger = logger.Default.LogMode(logger.Silent)
+	}
+
 	if config.Connection == "mysql" {
 		suffix := "?loc="
 		if config.Locale == "" {
@@ -62,7 +74,8 @@ func (module *DbModule) AddConfig(profName string, config *DbProfile) {
 		suffix += "&parseTime=true&multiStatements=true"
 		log.Println(config.Username + ":" + config.Password + "@tcp(" + config.Host + ":" + config.Port + ")/" + config.Database + suffix)
 		module.db[profName], err = gorm.Open(
-			mysql.Open(config.Username + ":" + config.Password + "@tcp(" + config.Host + ":" + config.Port + ")/" + config.Database + suffix),
+			mysql.Open(config.Username+":"+config.Password+"@tcp("+config.Host+":"+config.Port+")/"+config.Database+suffix),
+			&gormConfig,
 		)
 	} else if config.Connection == "postgres" {
 		var connInfo string
@@ -75,6 +88,7 @@ func (module *DbModule) AddConfig(profName string, config *DbProfile) {
 		}
 		module.db[profName], err = gorm.Open(
 			postgres.Open(connInfo),
+			&gormConfig,
 		)
 	}
 
@@ -93,10 +107,13 @@ func (module *DbModule) AddConfig(profName string, config *DbProfile) {
 		log.Fatalf("DB profile `%s` ping error: %v", profName, err)
 	}
 
-	if config.Connection == "postgres" {
+	if module.autoMigrate && config.Connection == "postgres" {
 		module.db[profName].Exec(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`)
 	}
 
+	if err := module.db[profName].Use(tracing.NewPlugin()); err != nil {
+		panic(err)
+	}
 }
 
 // RemoveConfig = remove configuration
@@ -112,6 +129,10 @@ func (module *DbModule) Default() *gorm.DB {
 // Get : get DB profile
 func (module *DbModule) Get(profName string) *gorm.DB {
 	return module.db[profName]
+}
+
+func (module *DbModule) AutoMigrate() bool {
+	return module.autoMigrate
 }
 
 // impl `DbService` end
