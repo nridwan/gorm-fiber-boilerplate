@@ -31,7 +31,7 @@ func fxRegister(lifeCycle fx.Lifecycle, module *UserModule) {
 
 func SetupModule(app *app.AppModule, db *db.DbModule, jwt *jwt.JwtModule, monitor *monitor.MonitorModule) *UserModule {
 	service := NewUserService(jwt, monitor.Service)
-	middleware := NewUserJwtMiddleware(jwt)
+	middleware := NewUserJwtMiddleware(jwt, monitor.Service)
 	controller := newUserController(service, app.ResponseService, app.Validator)
 	return NewModule(service, middleware, controller, jwt, db, app.App)
 }

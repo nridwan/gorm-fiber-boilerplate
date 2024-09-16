@@ -12,8 +12,12 @@ func GetFiberJwtClaims(c *fiber.Ctx) jwtservice.JwtClaim {
 	return c.Locals("user").(*jwt.Token).Claims.(jwtservice.JwtClaim)
 }
 
+func GetFiberJwtUserIdString(c *fiber.Ctx) (id string, err error) {
+	return GetFiberJwtClaims(c).GetSubject()
+}
+
 func GetFiberJwtUserId(c *fiber.Ctx) (id uuid.UUID, err error) {
-	idString, err := GetFiberJwtClaims(c).GetSubject()
+	idString, err := GetFiberJwtUserIdString(c)
 	if err != nil {
 		return
 	}

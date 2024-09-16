@@ -12,7 +12,8 @@ type MonitorSpan = trace.Span
 type MonitorTracer = trace.Tracer
 
 type MonitorService interface {
-	StartTrace(context context.Context, title string, attributes map[string]interface{}) (context.Context, MonitorSpan)
+	StartTraceSpan(context context.Context, title string, attributes map[string]interface{}) (context.Context, MonitorSpan)
+	SetCurrentSpanAttributes(context context.Context, attributes map[string]interface{})
 	setTracer(tracer MonitorTracer)
 }
 
@@ -44,8 +45,12 @@ func mapToAttributes(attributes map[string]interface{}) []attribute.KeyValue {
 	return result
 }
 
-func (service *monitorServiceImpl) StartTrace(context context.Context, title string, attributes map[string]interface{}) (context.Context, MonitorSpan) {
+func (service *monitorServiceImpl) StartTraceSpan(context context.Context, title string, attributes map[string]interface{}) (context.Context, MonitorSpan) {
 	return service.tracer.Start(context, title, trace.WithAttributes(mapToAttributes(attributes)...))
+}
+
+func (service *monitorServiceImpl) SetCurrentSpanAttributes(context context.Context, attributes map[string]interface{}) {
+	trace.SpanFromContext(context).SetAttributes(mapToAttributes(attributes)...)
 }
 
 func (service *monitorServiceImpl) setTracer(tracer MonitorTracer) {

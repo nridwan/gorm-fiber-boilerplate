@@ -4,7 +4,7 @@ tmp_dir = "tmp"
 [build]
 cmd = "python air_build.py"
 bin = "./tmp/main"
-delay = 1000                                      # ms
-exclude_dir = ["assets", "tmp", "vendor", ".git"]
+delay = 1000                                # ms
+exclude_dir = ["assets", "tmp", "vendor"]
 include_ext = ["go", "tpl", "tmpl", "html"]
 exclude_regex = ["_test\\.go"]

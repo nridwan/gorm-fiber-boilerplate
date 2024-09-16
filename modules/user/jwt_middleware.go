@@ -2,6 +2,7 @@ package user
 
 import (
 	"gofiber-boilerplate/modules/jwt"
+	"gofiber-boilerplate/modules/monitor"
 	"gofiber-boilerplate/utils"
 
 	"github.com/gofiber/fiber/v2"
@@ -13,12 +14,14 @@ type UserJwtMiddleware interface {
 }
 
 type userMiddlewareImpl struct {
-	jwtService jwt.JwtService
+	jwtService     jwt.JwtService
+	monitorService monitor.MonitorService
 }
 
-func NewUserJwtMiddleware(jwtService jwt.JwtService) UserJwtMiddleware {
+func NewUserJwtMiddleware(jwtService jwt.JwtService, monitorService monitor.MonitorService) UserJwtMiddleware {
 	return &userMiddlewareImpl{
-		jwtService: jwtService,
+		jwtService:     jwtService,
+		monitorService: monitorService,
 	}
 }
 
@@ -37,7 +40,15 @@ func (service *userMiddlewareImpl) IsAdmin(c *fiber.Ctx) error {
 // impl `jwt.JwtMiddleware` start
 
 func (service *userMiddlewareImpl) CanAccess(c *fiber.Ctx) error {
-	return service.jwtService.CanAccess(c, jwtIssuer)
+	err := service.jwtService.CanAccess(c, jwtIssuer)
+
+	if err == nil {
+		if userId, err := utils.GetFiberJwtUserIdString(c); err == nil {
+			service.monitorService.SetCurrentSpanAttributes(c.UserContext(), map[string]interface{}{"admin_user_id": userId})
+		}
+	}
+
+	return err
 }
 func (service *userMiddlewareImpl) CanRefresh(c *fiber.Ctx) error {
 	return service.jwtService.CanRefresh(c, jwtIssuer)

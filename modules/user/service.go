@@ -63,7 +63,7 @@ func (service *userServiceImpl) Init(db db.DbService) {
 }
 
 func (service *userServiceImpl) Insert(context context.Context, user *usermodel.UserModel) (*userdto.UserDTO, error) {
-	spanContext, span := service.monitorService.StartTrace(context, "UserService.Insert", map[string]interface{}{})
+	spanContext, span := service.monitorService.StartTraceSpan(context, "UserService.Insert", map[string]interface{}{})
 	defer span.End()
 	err := service.validateEmail(spanContext, user.Email)
 	if err != nil {
@@ -84,7 +84,7 @@ func (service *userServiceImpl) Insert(context context.Context, user *usermodel.
 }
 
 func (service *userServiceImpl) Update(context context.Context, id uuid.UUID, updateDTO *userdto.UpdateUserDTO) (*userdto.UserDTO, error) {
-	spanContext, span := service.monitorService.StartTrace(context, "UserService.Update", map[string]interface{}{
+	spanContext, span := service.monitorService.StartTraceSpan(context, "UserService.Update", map[string]interface{}{
 		"id": id.String(),
 	})
 	defer span.End()
@@ -104,7 +104,7 @@ func (service *userServiceImpl) Update(context context.Context, id uuid.UUID, up
 }
 
 func (service *userServiceImpl) List(context context.Context, req *appmodel.GetListRequest) (*appmodel.PaginationResponseList, error) {
-	spanContext, span := service.monitorService.StartTrace(context, "UserService.List", utils.StructToMap(req))
+	spanContext, span := service.monitorService.StartTraceSpan(context, "UserService.List", utils.StructToMap(req))
 	defer span.End()
 	var count int64
 	users := []usermodel.UserModel{}
@@ -157,7 +157,7 @@ func (service *userServiceImpl) List(context context.Context, req *appmodel.GetL
 }
 
 func (service *userServiceImpl) Detail(context context.Context, id uuid.UUID) (*userdto.UserDTO, error) {
-	spanContext, span := service.monitorService.StartTrace(context, "UserService.Detail", map[string]interface{}{
+	spanContext, span := service.monitorService.StartTraceSpan(context, "UserService.Detail", map[string]interface{}{
 		"id": id.String(),
 	})
 	defer span.End()
@@ -167,7 +167,7 @@ func (service *userServiceImpl) Detail(context context.Context, id uuid.UUID) (*
 }
 
 func (service *userServiceImpl) Delete(context context.Context, id uuid.UUID) error {
-	spanContext, span := service.monitorService.StartTrace(context, "UserService.Delete", map[string]interface{}{
+	spanContext, span := service.monitorService.StartTraceSpan(context, "UserService.Delete", map[string]interface{}{
 		"id": id.String(),
 	})
 	defer span.End()
@@ -177,7 +177,7 @@ func (service *userServiceImpl) Delete(context context.Context, id uuid.UUID) er
 }
 
 func (service *userServiceImpl) Login(context context.Context, req *userdto.LoginDTO) (response *userdto.LoginResponseDTO, err error) {
-	spanContext, span := service.monitorService.StartTrace(context, "UserService.Login", map[string]interface{}{
+	spanContext, span := service.monitorService.StartTraceSpan(context, "UserService.Login", map[string]interface{}{
 		"email": req.Email,
 	})
 	defer span.End()
@@ -200,7 +200,7 @@ func (service *userServiceImpl) Login(context context.Context, req *userdto.Logi
 }
 
 func (service *userServiceImpl) RefreshToken(context context.Context, claims jwt.JwtClaim) (response *userdto.LoginResponseDTO, err error) {
-	_, span := service.monitorService.StartTrace(context, "UserService.RefreshToken", map[string]interface{}{})
+	_, span := service.monitorService.StartTraceSpan(context, "UserService.RefreshToken", map[string]interface{}{})
 	defer span.End()
 	response, err = service.jwtService.Refresh(claims)
 	return
